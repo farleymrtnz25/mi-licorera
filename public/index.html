@@ -4,9 +4,93 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tienda de Licores</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #5a656a;
+      color: #fff;
+      text-align: center;
+      padding-top: 50px;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #logout-btn {
+      background-color: #e74c3c;
+      color: white;
+    }
+    #login-btn {
+      background-color: #2ecc71;
+      color: white;
+    }
+  </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <h1>Tienda de Licores</h1>
+
+  <div id="user-info"></div>
+
+  <button id="login-btn">Iniciar sesión</button>
+  <button id="logout-btn" style="display: none;">Cerrar sesión</button>
+
+  <!-- SDK de Auth0 -->
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/1.13/auth0-spa-js.production.js"></script>
+
+  <script>
+    let auth0Client;
+
+    const config = {
+      domain: "mi-licorera-auth.us.auth0.com",
+      client_id: "3OvmR2j8x5KIgHICPQrk96vIV4WU1PvR"
+    };
+
+    async function initAuth() {
+      auth0Client = await createAuth0Client(config);
+
+      const isAuthenticated = await auth0Client.isAuthenticated();
+
+      if (isAuthenticated) {
+        const user = await auth0Client.getUser();
+        showUser(user);
+      } else {
+        const query = window.location.search;
+        if (query.includes("code=") && query.includes("state=")) {
+          await auth0Client.handleRedirectCallback();
+          window.history.replaceState({}, document.title, "/");
+          const user = await auth0Client.getUser();
+          showUser(user);
+        }
+      }
+    }
+
+    function showUser(user) {
+      document.getElementById("user-info").innerHTML = `<p>Hola, ${user.name}</p>`;
+      document.getElementById("login-btn").style.display = "none";
+      document.getElementById("logout-btn").style.display = "inline-block";
+    }
+
+    async function login() {
+      await auth0Client.loginWithRedirect({
+        redirect_uri: window.location.origin
+      });
+    }
+
+    async function logout() {
+      auth0Client.logout({
+        returnTo: window.location.origin
+      });
+    }
+
+    window.onload = () => {
+      initAuth();
+      document.getElementById("login-btn").addEventListener("click", login);
+      document.getElementById("logout-btn").addEventListener("click", logout);
+    };
+  </script>
 </body>
 </html>
